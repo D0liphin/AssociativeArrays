@@ -161,10 +161,10 @@ double chaintable_load(const chaintable *tbl)
 struct astv_array_vtable chaintable_vtable()
 {
         return (struct astv_array_vtable){
-                .init = (astv_array_init_fn)chaintable_init,
-                .insert = (astv_array_insert_fn)chaintable_insert,
-                .remove = (astv_array_remove_fn)chaintable_remove,
-                .lookup = (astv_array_lookup_fn)chaintable_lookup,
-                .deinit = (astv_array_deinit_fn)chaintable_deinit,
+                .init = (astv_array_init_fn_t)chaintable_init,
+                .insert = (astv_array_insert_fn_t)chaintable_insert,
+                .remove = (astv_array_remove_fn_t)chaintable_remove,
+                .lookup = (astv_array_lookup_fn_t)chaintable_lookup,
+                .deinit = (astv_array_deinit_fn_t)chaintable_deinit,
         };
 }
