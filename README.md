@@ -15,4 +15,4 @@ collection, for example.
 
 You will need to construct a `astv_array_vtable` for your 
 implementation. This defines the operations listed on the wikipedia 
-article
+article, that is `insert()`, `remove()` and `lookup()`.
