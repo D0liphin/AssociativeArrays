@@ -16,3 +16,6 @@ collection, for example.
 You will need to construct a `astv_array_vtable` for your 
 implementation. This defines the operations listed on the wikipedia 
 article, that is `insert()`, `remove()` and `lookup()`.
+
+The project can be built with `make build` and executed with 
+`make build`. If you encounter any problems, use `make clean`.
