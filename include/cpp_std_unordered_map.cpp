@@ -7,10 +7,10 @@ extern "C" {
 #include <unordered_map>
 
 static_assert(sizeof(std::unordered_map<keyint_t, valint_t>) ==
-              sizeof(struct cpp_std_unordered_map));
+              sizeof(cpp_std_unordered_map));
 
 static_assert(alignof(std::unordered_map<keyint_t, valint_t>) ==
-              alignof(struct cpp_std_unordered_map));
+              alignof(cpp_std_unordered_map));
 
 extern "C" {
 void cpp_std_unordered_map_init(void *tbl)

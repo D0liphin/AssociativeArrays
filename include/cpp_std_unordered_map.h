@@ -2,9 +2,9 @@
 
 #include "astv_array_vtable.h"
 
-struct cpp_std_unordered_map {
+typedef struct {
         intptr_t _[7];
-};
+} cpp_std_unordered_map;
 
 void cpp_std_unordered_map_init(void *tbl);
 

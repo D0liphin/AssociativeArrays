@@ -4,6 +4,6 @@
 
 int main()
 {
-        RUN_ALL_TESTS(chaintable, chaintable_vtable());
+        RUN_ALL_TESTS(cpp_std_unordered_map, cpp_std_unordered_map_vtable());
         return 0;
 }

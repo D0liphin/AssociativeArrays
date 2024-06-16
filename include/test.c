@@ -42,7 +42,7 @@ void test_updates_persist(struct astv_array_vtable vtbl, void *tbl)
 
 void test_against_oracle(struct astv_array_vtable vtbl, void *tbl)
 {
-        struct cpp_std_unordered_map oracle;
+        cpp_std_unordered_map oracle;
         vtbl.init(tbl);
         cpp_std_unordered_map_init(&oracle);
 #define INSERT 0
