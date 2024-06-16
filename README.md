@@ -17,9 +17,6 @@ You will need to construct a `astv_array_vtable` for your
 implementation. This defines the operations listed on the wikipedia 
 article, that is `insert()`, `remove()` and `lookup()`.
 
-The project can be built with `make build` and executed with 
-`make build`. If you encounter any problems, use `make clean`.
-
 ```c
 struct astv_array_vtable {
 /* 
@@ -53,4 +50,26 @@ astv_array_lookup_fn_t lookup;
  */
 astv_array_deinit_fn_t deinit;
 };
+```
+
+The project can be built with `make build` and executed with 
+`make build`. If you encounter any problems, use `make clean`.
+
+There is an existing implementation for `std::unordered_map`, which,
+naturally, passes all the tests. You can view its execution of the 
+tests with
+
+```
+$ make build && make run
+start cpp_std_unordered_map::test_inserts_persist
+cpp_std_unordered_map::test_inserts_persist ✅
+start cpp_std_unordered_map::test_updates_persist
+cpp_std_unordered_map::test_updates_persist ✅
+start cpp_std_unordered_map::test_doesnt_contain_unmapped_keys
+cpp_std_unordered_map::test_doesnt_contain_unmapped_keys ✅
+start cpp_std_unordered_map::test_removes_mappings
+cpp_std_unordered_map::test_removes_mappings ✅
+start cpp_std_unordered_map::test_against_oracle
+tested 8386557 operations against oracle...
+cpp_std_unordered_map::test_against_oracle ✅
 ```
