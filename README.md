@@ -1,7 +1,7 @@
 # Associative Array Testing/Benchmarking Suite
 
 A variety of benchmarks and tests for **associative arrays**, also
-called **dictionaries**, **maps** or **(symbol) lprobingtables**.
+called **dictionaries**, **maps** or **(symbol) tables**.
 
 You can use it to benchmark C or C++ associative arrays, or any other
 language that allows you to expose `extern "C"` functions, such as Rust.
