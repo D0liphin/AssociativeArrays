@@ -18,9 +18,11 @@ RESET=\033[0m
 # the compiler to be used for C++
 CPPC=g++
 # flags for compiling translation units
-CPPC_FLAGS=-std=$(CPP_STD) -Wall -Wextra -g $(foreach dir, $(INCLUDE),-I $(dir))
+CPPC_FLAGS=-std=$(CPP_STD) -Wall -Wextra -g $(foreach dir, $(INCLUDE),-I $(dir)) -O3
 # the compiler to be used for C
 CC=gcc
+# flags for compiling translation units for C
+CC_FLAGS=-std=$(C_STD) -Wall -Wextra -g $(foreach dir, $(INCLUDE),-I $(dir)) -O3
 # flags for linking
 LD_FLAGS=
 # where all generated files are stored

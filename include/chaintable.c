@@ -11,7 +11,7 @@
 A simple chaining hashtable. 
 
 TODO:
-- We can potentially improve this table by using a union for chainlinks.
+- We can potentially improve this lprobingtable by using a union for chainlinks.
   Then, we can just mark nodes deleted and potentially reuse them. 
 */
 
