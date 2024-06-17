@@ -54,20 +54,6 @@ O_FILES=$(call make_o_files,$(SRC_FILES))
 # list of all .d files
 D_FILES=$(patsubst %.o,%.d,$(O_FILES)) 
 -include $(D_FILES)
-
-all: build
-
-# build the project, creating ./target/main
-build: $(TARGET)/main
-
-# continuation of the above, but making sure we don't relink each time
-$(TARGET)/main: $(O_FILES) Makefile
-	@mkdir -p $(TARGET)
-# only compile if there is actually something to compile
-ifdef SRC_FILES
-	$(CPPC) $(LD_FLAGS) -o $(TARGET)/$(EXEC) $(O_FILES)
-endif
-	@echo "$(GREEN)***$(RESET) done! \(^-^)/ $(GREEN)***$(RESET)"
 	
 $(TARGET)/%.cpp.o: ./%.cpp
 	@mkdir -p $(dir ./$@)
@@ -105,26 +91,4 @@ clean:
 	@rm -rf ./target
 	@echo "$(GREEN)***$(RESET) All cleaned up, boss! (￣ー￣)ゞ $(GREEN)***\
 	$(RESET)"
-
-# # prints help about the usage of this Makefile
-# help:
-# 	@echo ""
-# 	@echo "Simple C++ build utility"
-# 	@echo ""
-# 	@echo "USAGE:"
-# 	@echo "    make [COMMAND]"
-# 	@echo ""
-# 	@echo "COMMAND:"
-# 	@echo "    init         Create the recommended project structure"
-# 	@echo "    build        Compile all source files into ./target/main"
-# 	@echo "    clean        Remove the target directory"
-# 	@echo "    run          Shorthand for ./target/main"
-# 	@echo "    help         Display this message"
-# 	@echo "    print-src    Print files being used by olibuild"
-# 	@echo "    build-tests  Compiles all tests (for now, this will always relink)"
-# 	@echo "    run-tests    Runs all built tests"
-# 	@echo ""
-# 	@echo "NOTE: if all your tests are in ./tests you can clean just the binaries"
-# 	@echo "      generated from your tests with `sudo rm -rf ./target/tests`"
-# 	@echo ""
 

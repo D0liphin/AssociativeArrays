@@ -39,9 +39,13 @@ template <typename T> struct BMParams {
 template <typename T> struct BM {
         static void insert_2update_randoms(benchmark::State &state)
         {
+                // get the vtable
                 struct astv_array_vtable vtbl = BMParams<T>::vtbl();
+                // get the table and cast to a (void *) so C++ doesn't complain
+                // to us about implicit casts
                 T t;
                 void *tbl = (void *)&t;
+                // actual benchmark code
                 size_t nr_insertions = state.range(0);
                 for (auto _ : state) {
                         vtbl.init(tbl);
