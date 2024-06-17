@@ -1,0 +1,126 @@
+{
+  "context": {
+    "date": "2024-06-17T12:59:37+01:00",
+    "host_name": "olis-pc",
+    "executable": "./target/benchmark",
+    "num_cpus": 8,
+    "mhz_per_cpu": 4700,
+    "cpu_scaling_enabled": true,
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 49152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 32768,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 1310720,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 3,
+        "size": 12582912,
+        "num_sharing": 8
+      }
+    ],
+    "load_avg": [0.55957,0.781738,0.780273],
+    "library_version": "v1.8.4-8-g44775254",
+    "library_build_type": "release",
+    "json_schema_version": 1
+  },
+  "benchmarks": [
+    {
+      "name": "BM<cpp_std_unordered_map>::insert_2update_randoms/8",
+      "family_index": 0,
+      "per_family_instance_index": 0,
+      "run_name": "BM<cpp_std_unordered_map>::insert_2update_randoms/8",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 2557697,
+      "real_time": 2.4619292746476654e+02,
+      "cpu_time": 2.4619104178485571e+02,
+      "time_unit": "ns"
+    },
+    {
+      "name": "BM<cpp_std_unordered_map>::insert_2update_randoms/64",
+      "family_index": 0,
+      "per_family_instance_index": 1,
+      "run_name": "BM<cpp_std_unordered_map>::insert_2update_randoms/64",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 299047,
+      "real_time": 2.2970476547180929e+03,
+      "cpu_time": 2.2963742187682878e+03,
+      "time_unit": "ns"
+    },
+    {
+      "name": "BM<cpp_std_unordered_map>::insert_2update_randoms/512",
+      "family_index": 0,
+      "per_family_instance_index": 2,
+      "run_name": "BM<cpp_std_unordered_map>::insert_2update_randoms/512",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 25206,
+      "real_time": 2.7309379076489127e+04,
+      "cpu_time": 2.7306747044354517e+04,
+      "time_unit": "ns"
+    },
+    {
+      "name": "BM<cpp_std_unordered_map>::insert_2update_randoms/4096",
+      "family_index": 0,
+      "per_family_instance_index": 3,
+      "run_name": "BM<cpp_std_unordered_map>::insert_2update_randoms/4096",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 2360,
+      "real_time": 3.1266184152504511e+05,
+      "cpu_time": 3.1244558177966077e+05,
+      "time_unit": "ns"
+    },
+    {
+      "name": "BM<cpp_std_unordered_map>::insert_2update_randoms/32768",
+      "family_index": 0,
+      "per_family_instance_index": 4,
+      "run_name": "BM<cpp_std_unordered_map>::insert_2update_randoms/32768",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 172,
+      "real_time": 3.2494694128112057e+06,
+      "cpu_time": 3.2494641918604644e+06,
+      "time_unit": "ns"
+    },
+    {
+      "name": "BM<cpp_std_unordered_map>::insert_2update_randoms/65536",
+      "family_index": 0,
+      "per_family_instance_index": 5,
+      "run_name": "BM<cpp_std_unordered_map>::insert_2update_randoms/65536",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 87,
+      "real_time": 6.7263725172726959e+06,
+      "cpu_time": 6.7263476781609124e+06,
+      "time_unit": "ns"
+    }
+  ]
+}

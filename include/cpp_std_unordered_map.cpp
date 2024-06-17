@@ -5,12 +5,11 @@ extern "C" {
 
 #include <cstddef>
 #include <unordered_map>
+#include <iostream>
 
-static_assert(sizeof(std::unordered_map<keyint_t, valint_t>) ==
-              sizeof(cpp_std_unordered_map));
+static_assert(sizeof(std::unordered_map<keyint_t, valint_t>) == sizeof(cpp_std_unordered_map));
 
-static_assert(alignof(std::unordered_map<keyint_t, valint_t>) ==
-              alignof(cpp_std_unordered_map));
+static_assert(alignof(std::unordered_map<keyint_t, valint_t>) == alignof(cpp_std_unordered_map));
 
 extern "C" {
 void cpp_std_unordered_map_init(void *tbl)

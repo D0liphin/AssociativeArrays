@@ -2,11 +2,13 @@
 # all directories that might contain header files
 INCLUDE=. ./include
 # all directories that might contain source files
-SRC=. ./src ./include
+SRC=. ./include
 # the C++ standard to use
 CPP_STD=c++11
 # the C standard to use
 C_STD=c11
+# where should we put the benchmarks? 
+BENCHMARK_OUT=./benchmark_results/out.json
 # *************************************************************************** #
 
 # some ANSI escape codes
@@ -63,7 +65,6 @@ $(TARGET)/main: $(O_FILES) Makefile
 	@mkdir -p $(TARGET)
 # only compile if there is actually something to compile
 ifdef SRC_FILES
-
 	$(CPPC) $(LD_FLAGS) -o $(TARGET)/$(EXEC) $(O_FILES)
 endif
 	@echo "$(GREEN)***$(RESET) done! \(^-^)/ $(GREEN)***$(RESET)"
@@ -83,6 +84,21 @@ run:
 print-src: 
 	@echo "object files ="$(O_FILES)
 	@echo "source files ="$(SRC_FILES)
+
+build-benchmarks: $(O_FILES) Makefile
+	@mkdir -p $(TARGET)
+	$(CPPC) $(CPPC_FLAGS) ./src/benchmark.cpp $(O_FILES) \
+		-isystem ./benchmark/include -Lbenchmark/build/src -lbenchmark -lpthread -o ./target/benchmark
+
+run-benchmarks:
+	./target/benchmark --benchmark_out=$(BENCHMARK_OUT)
+
+build-tests: $(O_FILES) ./target/src/test.c.o Makefile
+	@mkdir -p $(TARGET)
+	$(CPPC) $(LD_FLAGS) $(O_FILES) ./target/src/test.c.o -o $(TARGET)/test
+
+run-tests: 
+	@./target/test
 
 # remove target
 clean:

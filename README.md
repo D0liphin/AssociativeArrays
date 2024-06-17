@@ -13,6 +13,9 @@ collection, for example.
 
 ## Usage
 
+You will need `gcc`, `g++`, `cargo` and a global installation of
+[Google's benchmarking library](https://github.com/google/benchmark#installation).
+
 You will need to construct a `astv_array_vtable` for your 
 implementation. This defines the operations listed on the wikipedia 
 article, that is `insert()`, `remove()` and `lookup()`.

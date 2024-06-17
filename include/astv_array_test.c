@@ -1,4 +1,4 @@
-#include "test.h"
+#include "astv_array_test.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -134,7 +134,7 @@ void run_all_tests(const char *name, struct astv_array_vtable vtbl, void *tbl)
         ({                                                                         \
                 printf("start " ANSIBLUE("%s") "::" ANSIBLUE(#testfn) "\n", name); \
                 testfn(vtbl, tbl);                                                 \
-                printf(ANSIGREEN("%s") "::" ANSIGREEN(#testfn) " ✅\n", name);       \
+                printf(ANSIGREEN("%s") "::" ANSIGREEN(#testfn) " ✅\n", name);      \
         })
         RUNTEST(test_inserts_persist);
         RUNTEST(test_updates_persist);

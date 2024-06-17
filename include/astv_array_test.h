@@ -3,8 +3,6 @@
 #include "../include/astv_array_vtable.h"
 #include "../include/cpp_std_unordered_map.h"
 
-void test_against_oracle(struct astv_array_vtable, void *);
-
 /*
  * Run all tests, printing as we go.
  */
