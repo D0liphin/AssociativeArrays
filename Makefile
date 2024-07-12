@@ -63,7 +63,10 @@ $(TARGET)/%.c.o: ./%.c
 	@mkdir -p $(dir ./$@)
 	$(CC) $(CC_FLAGS) -MMD -MP -c -o ./$@ $<
 
-# runs the main program
+build: $(O_FILES) ./target/src/main.c.o Makefile
+	@mkdir -p $(TARGET)
+	$(CPPC) $(LD_FLAGS) $(O_FILES) ./target/src/main.c.o -o $(TARGET)/main
+
 run:
 	@./target/main
 
