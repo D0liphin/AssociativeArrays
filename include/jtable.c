@@ -1,8 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include "jtable.h"
 
 #define LDF 0.8
+
+size_t hash(keyint_t k)
+{
+        return idhash((char *)&k, sizeof(keyint_t));
+}
 
 void jtable_init_with_capacity(jtable *self, size_t cap)
 {
@@ -32,7 +38,7 @@ void bucket_print(struct bucket b)
                 break;
         }
         if (b.ctrl != CTRL_EMPTY) {
-                printf("%lu: %lu] -> %d => %d", b.key, b.val, b.next, b.chain_start);
+                printf("%lu: %lu] %d <-> %d => %d", b.key, b.val, b.prev, b.next, b.chain_start);
         }
 }
 
@@ -69,12 +75,29 @@ void jtable_realloc(jtable *self)
         *self = newtbl;
 }
 
+inline long jtable_follow_chain(jtable *self, keyint_t k, long i)
+{
+        struct bucket *b = &self->buckets[i];
+        i = (i + b->chain_start) % self->cap;
+        b = &self->buckets[i];
+        // Follow the chain until the end
+        do {
+                if (b->key == k) {
+                        // Update in-place, if we find a match along the way
+                        return i;
+                }
+                i = (i + b->next) % self->cap;
+                b = &self->buckets[i];
+        } while (b->next != 0);
+        return i;
+}
+
 void jtable_insert(jtable *self, keyint_t k, valint_t v)
 {
         if (self->len >= 3 * self->cap / 4) {
                 jtable_realloc(self);
         }
-        size_t h = idhash((char *)&k, sizeof(keyint_t));
+        size_t h = hash(k);
         long i = h % self->cap;
         struct bucket *b = &self->buckets[i];
         if (b->ctrl == CTRL_EMPTY) {
@@ -98,36 +121,120 @@ void jtable_insert(jtable *self, keyint_t k, valint_t v)
                 return;
         }
         // else: A chain exists for this hash, but it starts elsewhere
-        i = (i + b->chain_start) % self->cap;
+        i = jtable_follow_chain(self, k, i);
         b = &self->buckets[i];
-        // Follow the chain until the end
-        do {
-                if (b->key == k) {
-                        // Update in-place, if we find a match along the way
-                        b->val = v;
-                        return;
-                }
-                i = (i + b->next) % self->cap;
-                b = &self->buckets[i];
-        } while (b->next != 0);
+        if (b->key == k) {
+                b->val = v;
+                return;
+        }
         // We have reached the end of a chain, without finding a match. We need
         // to probe for a new spot
         long j = jtable_probe_until_empty(self, i);
-        b->next = (j - i) % self->cap;
+        uint16_t d = (j - i) % self->cap;
+        b->next = d;
         b = &self->buckets[j];
         b->ctrl = CTRL_DISPLACED;
+        b->prev = d;
         b->key = k;
         b->val = v;
         self->len++;
 }
 
-void jtable_remove(jtable *, keyint_t)
+/** Lookup the index of a bucket that matches `k`. `-1` represents an absent 
+  * key 
+  */
+inline long jtable_lookup_bucket(jtable *self, keyint_t k)
 {
+        size_t h = hash(k);
+        long i = h % self->cap;
+        struct bucket *b = &self->buckets[i];
+        if (b->ctrl == CTRL_EMPTY) {
+                puts("immediately EMPTY");
+                return -1;
+        }
+        i = jtable_follow_chain(self, k, i);
+        if (b->key == k) {
+                return i;
+        }
+        puts("Nowhere in the chain");
+        return -1;
 }
 
-valint_t *jtable_lookup(jtable *, keyint_t)
+/** For some bucket `b` that is being removed, replace it with the chain which
+  * it blocks. 
+  */
+inline void jtable_replace_with_chain_start(jtable *self, long i)
 {
-        return NULL;
+        struct bucket *b = &self->buckets[i];
+        if (b->chain_start) {
+                long j = (i + (long)b->chain_start) % self->cap;
+                struct bucket *headb = &self->buckets[j];
+                headb->ctrl = CTRL_EMPTY;
+                b->ctrl = CTRL_SNUG;
+                if (headb->next) {
+                        b->next = headb->next + b->chain_start;
+                } else {
+                        b->next = 0;
+                }
+                b->chain_start = 0;
+                b->prev = 0;
+                b->key = headb->key;
+                b->val = headb->val;
+                if (headb->chain_start) {
+                        jtable_replace_with_chain_start(self, j);
+                }
+        }
+}
+
+void jtable_remove(jtable *self, keyint_t k)
+{
+        if (self->cap == 0) {
+                return;
+        }
+        long i = jtable_lookup_bucket(self, k);
+        if (i == -1) {
+                return;
+        }
+        struct bucket *b = &self->buckets[i];
+
+        if (b->ctrl == CTRL_SNUG) {
+                if (!b->next) {
+                        b->ctrl = CTRL_EMPTY;
+                        return;
+                }
+                long j = (i + (long)b->next) % self->cap;
+                struct bucket *nextb = &self->buckets[j];
+                nextb->ctrl = CTRL_EMPTY;
+                b->next += nextb->next;
+                b->key = nextb->key;
+                b->val = nextb->val;
+                b->prev = 0;
+                jtable_replace_with_chain_start(self, j);
+                return;
+        }
+
+        b->ctrl = CTRL_EMPTY;
+        if (b->prev) {
+                struct bucket *prevb = &self->buckets[(i - (long)b->prev) % self->cap];
+                prevb->next += b->next;
+        }
+        if (b->next) {
+                struct bucket *nextb = &self->buckets[(i + (long)b->next) % self->cap];
+                nextb->prev += b->prev;
+        }
+        jtable_replace_with_chain_start(self, i);
+}
+
+valint_t *jtable_lookup(jtable *self, keyint_t k)
+{
+        if (self->cap == 0) {
+                return NULL;
+        }
+        long i = jtable_lookup_bucket(self, k);
+        if (i == -1) {
+                return NULL;
+        }
+        return &self->buckets[i].val;
 }
 
 void jtable_deinit(jtable *self)

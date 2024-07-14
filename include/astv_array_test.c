@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
 void test_inserts_persist(struct astv_array_vtable vtbl, void *tbl)
 {
@@ -72,8 +73,9 @@ void test_removes_mappings(struct astv_array_vtable vtbl, void *tbl)
         vtbl.deinit(tbl);
 }
 
-void test_against_oracle(struct astv_array_vtable vtbl, void *tbl)
+void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
 {
+        srand(time(NULL));
         cpp_std_unordered_map oracle;
         vtbl.init(tbl);
         cpp_std_unordered_map_init(&oracle);
@@ -108,7 +110,6 @@ void test_against_oracle(struct astv_array_vtable vtbl, void *tbl)
                                 assert(oraclev == NULL);
                                 break;
                         }
-                        // printf("%ld == %ld\n", *testv, *oraclev);
                         assert(*testv == *oraclev);
                         break;
                 }
@@ -123,6 +124,11 @@ void test_against_oracle(struct astv_array_vtable vtbl, void *tbl)
         puts("");
         cpp_std_unordered_map_deinit(&oracle);
         vtbl.deinit(tbl);
+}
+
+void test_against_oracle_ordered(struct astv_array_vtable vtbl, void *tbl) 
+{
+        
 }
 
 #define ANSIBLUE(STR) "\033[1m\033[34m" STR "\033[0m"

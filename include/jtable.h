@@ -9,7 +9,7 @@
 
 struct bucket {
         char ctrl;
-        // uint16_t prev;
+        uint16_t prev;
         uint16_t next;
         uint16_t chain_start;
         keyint_t key;
