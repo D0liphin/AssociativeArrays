@@ -64,7 +64,7 @@ size_t jtable_probe_until_empty(jtable *self, size_t i)
 void jtable_realloc(jtable *self)
 {
         jtable newtbl;
-        jtable_init_with_capacity(&newtbl, self->cap ? self->cap * 2 : 8);
+        jtable_init_with_capacity(&newtbl, self->cap ? self->cap * 2 : 6);
         for (size_t i = 0; i < self->cap; ++i) {
                 struct bucket b = self->buckets[i];
                 if (b.ctrl != CTRL_EMPTY) {
@@ -149,14 +149,13 @@ inline long jtable_lookup_bucket(jtable *self, keyint_t k)
         long i = h % self->cap;
         struct bucket *b = &self->buckets[i];
         if (b->ctrl == CTRL_EMPTY) {
-                puts("immediately EMPTY");
                 return -1;
         }
         i = jtable_follow_chain(self, k, i);
+        b = &self->buckets[i];
         if (b->key == k) {
                 return i;
         }
-        puts("Nowhere in the chain");
         return -1;
 }
 

@@ -5,6 +5,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
+
+char const *struct_name = "";
+char const *vtable_name = "";
 
 void test_inserts_persist(struct astv_array_vtable vtbl, void *tbl)
 {
@@ -73,16 +77,16 @@ void test_removes_mappings(struct astv_array_vtable vtbl, void *tbl)
         vtbl.deinit(tbl);
 }
 
+#define INSERT 0
+#define REMOVE 1
+#define LOOKUP 2
+
 void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
 {
         srand(time(NULL));
         cpp_std_unordered_map oracle;
         vtbl.init(tbl);
         cpp_std_unordered_map_init(&oracle);
-#define INSERT 0
-#define LOOKUP 1
-#define REMOVE 2
-        // #define CLEAR 4
         int maxv = 1 << 19;
         for (size_t it = 0; it < (1 << 23); ++it) {
                 if (it % 4093 == 0) {
@@ -92,7 +96,7 @@ void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
                         printf("tested %lu operations against oracle...", it);
                         fflush(stdout);
                 }
-                int fn = rand() % (REMOVE + 1);
+                int fn = rand() % (3);
                 int k, v;
                 switch (fn) {
                 case INSERT: {
@@ -108,6 +112,10 @@ void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
                         valint_t *oraclev = cpp_std_unordered_map_lookup(&oracle, k);
                         if (testv == NULL) {
                                 assert(oraclev == NULL);
+                                break;
+                        }
+                        if (oraclev == NULL) {
+                                assert(testv == NULL);
                                 break;
                         }
                         assert(*testv == *oraclev);
@@ -126,16 +134,190 @@ void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
         vtbl.deinit(tbl);
 }
 
-void test_against_oracle_ordered(struct astv_array_vtable vtbl, void *tbl) 
+struct op_insert {
+        keyint_t k;
+        keyint_t v;
+};
+
+struct op_remove {
+        keyint_t k;
+};
+
+struct operation {
+        int fn;
+        union {
+                struct op_insert insert;
+                struct op_remove remove;
+        } op;
+};
+
+#define MAX_KEYINT 8
+
+bool operation_inc(struct operation *o)
 {
-        
+        valint_t max_valint = 1;
+        switch (o->fn) {
+        case INSERT:
+                if (o->op.insert.v == max_valint) {
+                        if (o->op.insert.k == MAX_KEYINT) {
+                                o->fn = REMOVE;
+                                o->op.remove.k = 0;
+                                return true;
+                        }
+                        o->op.insert.k++;
+                        o->op.insert.v = 0;
+                        return true;
+                }
+                o->op.insert.v++;
+                return true;
+        case REMOVE:
+                if (o->op.remove.k < MAX_KEYINT) {
+                        o->op.remove.k++;
+                        return true;
+                }
+                o->fn = INSERT;
+                o->op.insert.k = 0;
+                o->op.insert.v = 0;
+                return false;
+        }
+        return false; // unreachable
+}
+
+bool operations_inc(struct operation *os, size_t maxl, size_t *restrict l)
+{
+        for (size_t i = 0; i < maxl; ++i) {
+                if (operation_inc(&os[i])) {
+                        *l = *l > i ? *l : i + 1;
+                        return true;
+                }
+        }
+        printf("maxl = %lu\n", maxl);
+        return false;
+}
+
+void operation_print(struct operation o)
+{
+        switch (o.fn) {
+        case INSERT:
+                printf("vtbl.insert(&tbl, %lu, %lu);", o.op.insert.k, o.op.insert.v);
+                break;
+        case REMOVE:
+                printf("vtbl.remove(&tbl, %lu);", o.op.remove.k);
+                break;
+        }
+}
+
+void operation_print_small(struct operation o)
+{
+        switch (o.fn) {
+        case INSERT:
+                printf("i(%lu,%lu)", o.op.insert.k, o.op.insert.v);
+                break;
+        case REMOVE:
+                printf("r(%lu)  ", o.op.remove.k);
+                break;
+        }
+}
+
+void operations_announce_failure(struct operation *os, size_t faili, keyint_t k,
+                                 valint_t *expectedv)
+{
+        for (int n = 0; n < 20; ++n) {
+                printf("\b\b\b\b\b\b\b\b\b\b");
+        }
+        printf("// Failed to match oracle output on below test case\n");
+        char t[] = "        ";
+        printf("int main()\n{\n");
+        printf("%s%s tbl;", t, struct_name);
+        printf("\n%sstruct astv_array_vtable vtbl = %s;", t, vtable_name);
+        printf("\n%svtbl.init(&tbl);", t);
+        for (size_t i = 0; i <= faili; ++i) {
+                printf("\n%s", t);
+                operation_print(os[i]);
+        }
+        if (expectedv == NULL) {
+                printf("\n%sassert(vtbl.lookup(&tbl, %lu) == NULL);", t, k);
+        } else {
+                printf("\n%svalint_t *v = vtbl.lookup(&tbl, %lu);", t, k);
+                printf("\n%sassert(v != NULL);", t);
+                printf("\n%sassert(*v == %lu);", t, *expectedv);
+        }
+        printf("\n%svtbl.deinit(&tbl);\n%sreturn 0;", t, t);
+        printf("\n}\n");
+}
+
+void test_against_oracle_ordered(struct astv_array_vtable vtbl, void *tbl)
+{
+#define MAX_OSL 8
+        cpp_std_unordered_map oracle;
+        struct operation os[MAX_OSL] = { 0 };
+        size_t osl = 1;
+        size_t i = 0;
+        do {
+                if (i % 100003 == 0) {
+                        for (int n = 0; n < 20; ++n) {
+                                printf("\b\b\b\b\b\b\b\b\b\b");
+                        }
+                        for (size_t i = 0; i < osl; ++i) {
+                                operation_print_small(os[i]);
+                        }
+                        fflush(stdout);
+                }
+                vtbl.init(tbl);
+                cpp_std_unordered_map_init(&oracle);
+                for (size_t i = 0; i < osl; ++i) {
+                        switch (os[i].fn) {
+                        case INSERT: {
+                                keyint_t k = os[i].op.insert.k;
+                                valint_t v = os[i].op.insert.v;
+                                vtbl.insert(tbl, k, v);
+                                cpp_std_unordered_map_insert(&oracle, k, v);
+                                break;
+                        }
+                        case REMOVE: {
+                                keyint_t k = os[i].op.remove.k;
+                                vtbl.remove(tbl, k);
+                                cpp_std_unordered_map_remove(&oracle, k);
+                                break;
+                        }
+                        }
+                }
+                for (keyint_t k = 0; k < MAX_KEYINT; ++k) {
+                        valint_t *testv = vtbl.lookup(tbl, k);
+                        valint_t *oraclev = cpp_std_unordered_map_lookup(&oracle, k);
+                        if (testv == NULL) {
+                                if (oraclev != NULL) {
+                                        operations_announce_failure(os, osl - 1, k, oraclev);
+                                        exit(0);
+                                }
+                                break;
+                        }
+                        if (oraclev == NULL) {
+                                if (testv != NULL) {
+                                        operations_announce_failure(os, osl - 1, k, oraclev);
+                                        exit(0);
+                                }
+                                break;
+                        }
+                        if (*testv != *oraclev) {
+                                operations_announce_failure(os, osl - 1, k, oraclev);
+                                exit(0);
+                        }
+                }
+                vtbl.deinit(tbl);
+                cpp_std_unordered_map_deinit(&oracle);
+                ++i;
+        } while (operations_inc(os, MAX_OSL, &osl));
+        puts("");
 }
 
 #define ANSIBLUE(STR) "\033[1m\033[34m" STR "\033[0m"
 #define ANSIGREEN(STR) "\033[1m\033[32m" STR "\033[0m"
 
-void run_all_tests(const char *name, struct astv_array_vtable vtbl, void *tbl)
+void run_all_tests(const char *name, const char *vname, struct astv_array_vtable vtbl, void *tbl)
 {
+        struct_name = name;
+        vtable_name = vname;
 #define RUNTEST(testfn)                                                            \
         ({                                                                         \
                 printf("start " ANSIBLUE("%s") "::" ANSIBLUE(#testfn) "\n", name); \
@@ -146,5 +328,21 @@ void run_all_tests(const char *name, struct astv_array_vtable vtbl, void *tbl)
         RUNTEST(test_updates_persist);
         RUNTEST(test_doesnt_contain_unmapped_keys);
         RUNTEST(test_removes_mappings);
-        RUNTEST(test_against_oracle);
+        RUNTEST(test_against_oracle_ordered);
+        RUNTEST(test_against_oracle_randoms);
+}
+
+void tmain()
+{
+        struct operation os[MAX_OSL] = { 0 };
+        size_t osl = 1;
+        size_t i = 0;
+        do {
+                for (size_t i = 0; i < osl; ++i) {
+                        operation_print_small(os[i]);
+                }
+                ++i;
+                getchar();
+        } while (operations_inc(os, MAX_OSL, &osl));
+        puts("");
 }
