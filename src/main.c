@@ -154,39 +154,43 @@
 //         return 0;
 // }
 
+// // Failed to match oracle output on below test case
+// int main()
+// {
+//         jtable tbl;
+//         struct astv_array_vtable vtbl = jtable_vtable();
+//         vtbl.init(&tbl);
+//         vtbl.remove(&tbl, 13);
+//         vtbl.insert(&tbl, 0, 1);
+//         vtbl.remove(&tbl, 15);
+//         vtbl.insert(&tbl, 12, 1);
+//         vtbl.insert(&tbl, 13, 0);
+//         vtbl.insert(&tbl, 2, 1);
+//         vtbl.insert(&tbl, 1, 1);
+//         vtbl.remove(&tbl, 13);
+//         valint_t *v = vtbl.lookup(&tbl, 1);
+//         assert(v != NULL);
+//         assert(*v == 1);
+//         vtbl.deinit(&tbl);
+//         return 0;
+// }
+
 // Failed to match oracle output on below test case
 int main()
 {
         jtable tbl;
         struct astv_array_vtable vtbl = jtable_vtable();
         vtbl.init(&tbl);
-        puts("vtbl.remove(&tbl, 13);");
-        vtbl.remove(&tbl, 13);
-        jtable_print(&tbl);
-        puts("vtbl.insert(&tbl, 0, 1);");
-        vtbl.insert(&tbl, 0, 1);
-        jtable_print(&tbl);
-        puts("vtbl.remove(&tbl, 15);");
-        vtbl.remove(&tbl, 15);
-        jtable_print(&tbl);
-        puts("vtbl.insert(&tbl, 12, 1);");
         vtbl.insert(&tbl, 12, 1);
-        jtable_print(&tbl);
-        puts("vtbl.insert(&tbl, 13, 0);");
-        vtbl.insert(&tbl, 13, 0);
-        jtable_print(&tbl);
-        puts("vtbl.insert(&tbl, 2, 1);");
-        vtbl.insert(&tbl, 2, 1);
-        jtable_print(&tbl);
-        puts("vtbl.insert(&tbl, 1, 1);"); // goes wrong here
-        vtbl.insert(&tbl, 1, 1);
-        jtable_print(&tbl);
-        puts("vtbl.remove(&tbl, 13);");
+        vtbl.insert(&tbl, 6, 1);
+        vtbl.insert(&tbl, 0, 1);
+        vtbl.remove(&tbl, 12);
         vtbl.remove(&tbl, 13);
-        jtable_print(&tbl);
-        valint_t *v = vtbl.lookup(&tbl, 1);
-        assert(v != NULL);
-        assert(*v == 1);
+        vtbl.remove(&tbl, 12);
+        vtbl.remove(&tbl, 3);
+        vtbl.remove(&tbl, 0);
+        vtbl.insert(&tbl, 12, 0);
+        assert(vtbl.lookup(&tbl, 0) == NULL);
         vtbl.deinit(&tbl);
         return 0;
 }

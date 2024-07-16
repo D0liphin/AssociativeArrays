@@ -298,34 +298,38 @@ void operations_exec(struct astv_array_vtable vtbl, void *tbl, struct operation 
 void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
 {
         srand(time(NULL));
-        const size_t osl = 8;
-        struct operation os[8] = { 0 };
-        keyint_t max_keyint = 16;
-        for (size_t it = 0; it < (1 << 23); ++it) {
-                if (it % 4093 == 0) {
-                        for (int n = 0; n < 10; ++n) {
-                                printf("\b\b\b\b\b");
+        for (size_t osl = 8; osl < 13; ++osl) {
+                struct operation *os = calloc(sizeof(struct operation), osl);
+                keyint_t max_keyint = 16;
+                printf("testing length-%lu sequences of operations...\n", osl);
+                for (size_t it = 0; it < (1 << 23); ++it) {
+                        if (it % 4093 == 0) {
+                                for (int n = 0; n < 10; ++n) {
+                                        printf("\b\b\b\b\b");
+                                }
+                                printf("tested %lu sequences against oracle...", it);
+                                fflush(stdout);
                         }
-                        printf("tested %lu operations against oracle...", it);
-                        fflush(stdout);
-                }
-                for (size_t i = 0; i < osl; ++i) {
-                        struct operation o;
-                        int r = rand();
-                        if ((r & 1) == 1) {
-                                o.fn = REMOVE;
-                                r >>= 1;
-                                o.op.remove.k = r % max_keyint;
-                        } else {
-                                o.fn = INSERT;
-                                r >>= 1;
-                                o.op.insert.v = r & 1;
-                                r >>= 1;
-                                o.op.insert.k = r % max_keyint;
+                        for (size_t i = 0; i < osl; ++i) {
+                                struct operation o;
+                                int r = rand();
+                                if ((r & 1) == 1) {
+                                        o.fn = REMOVE;
+                                        r >>= 1;
+                                        o.op.remove.k = r % max_keyint;
+                                } else {
+                                        o.fn = INSERT;
+                                        r >>= 1;
+                                        o.op.insert.v = r & 1;
+                                        r >>= 1;
+                                        o.op.insert.k = r % max_keyint;
+                                }
+                                os[i] = o;
                         }
-                        os[i] = o;
+                        operations_exec(vtbl, tbl, os, osl, max_keyint);
                 }
-                operations_exec(vtbl, tbl, os, osl, max_keyint);
+                puts("");
+                free(os);
         }
 }
 
