@@ -221,7 +221,7 @@ void jtable_remove(jtable *self, keyint_t k)
         if (rmvb->key != k) {
                 return;
         }
-
+        
         if (rmvb->ctrl == CTRL_SNUG) {
                 if (!rmvb->next) {
                         rmvb->ctrl = CTRL_EMPTY;
@@ -243,6 +243,7 @@ void jtable_remove(jtable *self, keyint_t k)
                 return;
         }
 
+        struct bucket rmvb_copy = *rmvb;
         rmvb->ctrl = CTRL_EMPTY;
         if (rmvb->prev) {
                 long j = nve_offset(rmvi, rmvb->prev, self->cap);
@@ -265,8 +266,8 @@ void jtable_remove(jtable *self, keyint_t k)
         }
         // We just removed the thing the chain_start points to, we need to
         // clean that up
-        if (rmvb->next) {
-                b->chain_start += rmvb->next;
+        if (rmvb_copy.next) {
+                b->chain_start += rmvb_copy.next;
         } else {
                 b->chain_start = 0;
         }
