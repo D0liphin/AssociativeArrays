@@ -18,4 +18,4 @@ void run_all_tests(const char *, const char *, struct astv_array_vtable, void *)
                 run_all_tests(#T, #VTABLE, VTABLE, &tbl); \
         })
 
-void tmain();
+        

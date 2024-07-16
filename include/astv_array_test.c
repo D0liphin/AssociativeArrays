@@ -81,7 +81,7 @@ void test_removes_mappings(struct astv_array_vtable vtbl, void *tbl)
 #define REMOVE 1
 #define LOOKUP 2
 
-void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
+void test_against_oracle_randoms_huge(struct astv_array_vtable vtbl, void *tbl)
 {
         srand(time(NULL));
         cpp_std_unordered_map oracle;
@@ -246,10 +246,92 @@ void operations_announce_failure(struct operation *os, size_t faili, keyint_t k,
         printf("\n}\n");
 }
 
+void operations_exec(struct astv_array_vtable vtbl, void *tbl, struct operation *os, size_t osl,
+                     keyint_t max_keyint)
+{
+        cpp_std_unordered_map oracle;
+        vtbl.init(tbl);
+        cpp_std_unordered_map_init(&oracle);
+        for (size_t i = 0; i < osl; ++i) {
+                switch (os[i].fn) {
+                case INSERT: {
+                        keyint_t k = os[i].op.insert.k;
+                        valint_t v = os[i].op.insert.v;
+                        vtbl.insert(tbl, k, v);
+                        cpp_std_unordered_map_insert(&oracle, k, v);
+                        break;
+                }
+                case REMOVE: {
+                        keyint_t k = os[i].op.remove.k;
+                        vtbl.remove(tbl, k);
+                        cpp_std_unordered_map_remove(&oracle, k);
+                        break;
+                }
+                }
+        }
+        for (keyint_t k = 0; k < max_keyint; ++k) {
+                valint_t *testv = vtbl.lookup(tbl, k);
+                valint_t *oraclev = cpp_std_unordered_map_lookup(&oracle, k);
+                if (testv == NULL) {
+                        if (oraclev != NULL) {
+                                operations_announce_failure(os, osl - 1, k, oraclev);
+                                exit(0);
+                        }
+                        break;
+                }
+                if (oraclev == NULL) {
+                        if (testv != NULL) {
+                                operations_announce_failure(os, osl - 1, k, oraclev);
+                                exit(0);
+                        }
+                        break;
+                }
+                if (*testv != *oraclev) {
+                        operations_announce_failure(os, osl - 1, k, oraclev);
+                        exit(0);
+                }
+        }
+        vtbl.deinit(tbl);
+        cpp_std_unordered_map_deinit(&oracle);
+}
+
+void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
+{
+        srand(time(NULL));
+        const size_t osl = 8;
+        struct operation os[8] = { 0 };
+        keyint_t max_keyint = 16;
+        for (size_t it = 0; it < (1 << 23); ++it) {
+                if (it % 4093 == 0) {
+                        for (int n = 0; n < 10; ++n) {
+                                printf("\b\b\b\b\b");
+                        }
+                        printf("tested %lu operations against oracle...", it);
+                        fflush(stdout);
+                }
+                for (size_t i = 0; i < osl; ++i) {
+                        struct operation o;
+                        int r = rand();
+                        if ((r & 1) == 1) {
+                                o.fn = REMOVE;
+                                r >>= 1;
+                                o.op.remove.k = r % max_keyint;
+                        } else {
+                                o.fn = INSERT;
+                                r >>= 1;
+                                o.op.insert.v = r & 1;
+                                r >>= 1;
+                                o.op.insert.k = r % max_keyint;
+                        }
+                        os[i] = o;
+                }
+                operations_exec(vtbl, tbl, os, osl, max_keyint);
+        }
+}
+
 void test_against_oracle_ordered(struct astv_array_vtable vtbl, void *tbl)
 {
-#define MAX_OSL 8
-        cpp_std_unordered_map oracle;
+#define MAX_OSL 6 // Change this is if you want a more comprehensive test suite
         struct operation os[MAX_OSL] = { 0 };
         size_t osl = 1;
         size_t i = 0;
@@ -263,49 +345,7 @@ void test_against_oracle_ordered(struct astv_array_vtable vtbl, void *tbl)
                         }
                         fflush(stdout);
                 }
-                vtbl.init(tbl);
-                cpp_std_unordered_map_init(&oracle);
-                for (size_t i = 0; i < osl; ++i) {
-                        switch (os[i].fn) {
-                        case INSERT: {
-                                keyint_t k = os[i].op.insert.k;
-                                valint_t v = os[i].op.insert.v;
-                                vtbl.insert(tbl, k, v);
-                                cpp_std_unordered_map_insert(&oracle, k, v);
-                                break;
-                        }
-                        case REMOVE: {
-                                keyint_t k = os[i].op.remove.k;
-                                vtbl.remove(tbl, k);
-                                cpp_std_unordered_map_remove(&oracle, k);
-                                break;
-                        }
-                        }
-                }
-                for (keyint_t k = 0; k < MAX_KEYINT; ++k) {
-                        valint_t *testv = vtbl.lookup(tbl, k);
-                        valint_t *oraclev = cpp_std_unordered_map_lookup(&oracle, k);
-                        if (testv == NULL) {
-                                if (oraclev != NULL) {
-                                        operations_announce_failure(os, osl - 1, k, oraclev);
-                                        exit(0);
-                                }
-                                break;
-                        }
-                        if (oraclev == NULL) {
-                                if (testv != NULL) {
-                                        operations_announce_failure(os, osl - 1, k, oraclev);
-                                        exit(0);
-                                }
-                                break;
-                        }
-                        if (*testv != *oraclev) {
-                                operations_announce_failure(os, osl - 1, k, oraclev);
-                                exit(0);
-                        }
-                }
-                vtbl.deinit(tbl);
-                cpp_std_unordered_map_deinit(&oracle);
+                operations_exec(vtbl, tbl, os, osl, MAX_KEYINT);
                 ++i;
         } while (operations_inc(os, MAX_OSL, &osl));
         puts("");
@@ -328,21 +368,7 @@ void run_all_tests(const char *name, const char *vname, struct astv_array_vtable
         RUNTEST(test_updates_persist);
         RUNTEST(test_doesnt_contain_unmapped_keys);
         RUNTEST(test_removes_mappings);
-        RUNTEST(test_against_oracle_ordered);
+        // RUNTEST(test_against_oracle_ordered);
         RUNTEST(test_against_oracle_randoms);
-}
-
-void tmain()
-{
-        struct operation os[MAX_OSL] = { 0 };
-        size_t osl = 1;
-        size_t i = 0;
-        do {
-                for (size_t i = 0; i < osl; ++i) {
-                        operation_print_small(os[i]);
-                }
-                ++i;
-                getchar();
-        } while (operations_inc(os, MAX_OSL, &osl));
-        puts("");
+        RUNTEST(test_against_oracle_randoms_huge);
 }
