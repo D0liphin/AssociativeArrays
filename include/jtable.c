@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include "jtable.h"
+
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 #define LDF 0.8
 
@@ -73,18 +77,30 @@ void jtable_print(jtable *self)
         printf("}\n");
 }
 
-size_t jtable_probe_until_empty(jtable *self, size_t i)
+inline size_t jtable_lprobe_until_empty(jtable *self, size_t i)
 {
-        while (self->buckets[i].ctrl != CTRL_EMPTY) {
-                i = (i + 1) % self->cap;
-        }
+        size_t pi = 1;
+        do {
+                i += pi++;
+                i %= self->cap;
+        } while (self->buckets[i].ctrl != CTRL_EMPTY);
+        return i;
+}
+
+inline size_t jtable_qprobe_until_empty(jtable *self, size_t i)
+{
+        size_t pi = 1;
+        do {
+                i += pi++;
+                i %= self->cap;
+        } while (self->buckets[i].ctrl != CTRL_EMPTY);
         return i;
 }
 
 void jtable_realloc(jtable *self)
 {
         jtable newtbl;
-        jtable_init_with_capacity(&newtbl, self->cap ? self->cap * 2 : 8);
+        jtable_init_with_capacity(&newtbl, self->cap ? self->cap * 4 : 32);
         for (size_t i = 0; i < self->cap; ++i) {
                 struct bucket b = self->buckets[i];
                 if (b.ctrl != CTRL_EMPTY) {
@@ -98,15 +114,16 @@ void jtable_realloc(jtable *self)
 inline long jtable_follow_chain(jtable *self, keyint_t k, long i)
 {
         struct bucket *b = &self->buckets[i];
-        i = (i + b->chain_start) % self->cap;
+        i = pve_offset(i, b->chain_start, self->cap);
         b = &self->buckets[i];
-        // Follow the chain until the end
+// Follow the chain until the end
+#pragma GCC unroll 8
         do {
                 if (b->key == k) {
                         // Update in-place, if we find a match along the way
                         return i;
                 }
-                i = (i + b->next) % self->cap;
+                i = pve_offset(i, b->next, self->cap);
                 b = &self->buckets[i];
         } while (b->next != 0);
         return i;
@@ -122,25 +139,26 @@ void jtable_insert(jtable *self, keyint_t k, valint_t v)
         struct bucket *b = &self->buckets[i];
         if (b->ctrl == CTRL_EMPTY) {
                 // We can immediately insert into the bucket
+                // extremely low-cost
+                memset(b, 0, sizeof(struct bucket));
                 b->ctrl = CTRL_SNUG;
                 b->key = k;
                 b->val = v;
-                b->next = 0;
-                b->prev = 0;
                 self->len++;
                 return;
         }
-        if (b->ctrl != CTRL_SNUG && b->chain_start == 0) {
+        if (unlikely(b->ctrl != CTRL_SNUG && b->chain_start == 0)) {
                 // No chain exists for this hash, and this cell is already
                 // occupied
-                long j = jtable_probe_until_empty(self, i);
+                // low-cost -- this is just a linear probe
+                long j = jtable_qprobe_until_empty(self, i);
                 b->chain_start = index_delta(i, j, self->cap);
                 b = &self->buckets[j];
+                i = (i + 1) % self->cap;
+                memset(b, 0, sizeof(struct bucket));
                 b->ctrl = CTRL_DISPLACED_HEAD;
                 b->key = k;
                 b->val = v;
-                b->next = 0;
-                b->prev = 0;
                 self->len++;
                 return;
         }
@@ -153,15 +171,16 @@ void jtable_insert(jtable *self, keyint_t k, valint_t v)
         }
         // We have reached the end of a chain, without finding a match. We need
         // to probe for a new spot
-        long j = jtable_probe_until_empty(self, i);
+        long j = jtable_lprobe_until_empty(self, i);
         uint16_t d = index_delta(i, j, self->cap);
         b->next = d;
-        b = &self->buckets[j];
-        b->ctrl = CTRL_DISPLACED;
-        b->prev = d;
-        b->key = k;
-        b->val = v;
-        b->next = 0;
+        self->buckets[j] = (struct bucket){
+                .ctrl = CTRL_DISPLACED,
+                .prev = d,
+                .next = 0,
+                .key = k,
+                .val = v,
+        };
         self->len++;
 }
 
@@ -221,11 +240,17 @@ void jtable_remove(jtable *self, keyint_t k)
         size_t h = hash(k);
         long i = h % self->cap;
         struct bucket *b = &self->buckets[i];
+
+        // If the cell is already empty, we do not need to remove anything, exit
         if (b->ctrl == CTRL_EMPTY) {
                 return;
         }
+
+        // rmvi is the index of the bucket to remove, rmvb is the actual bucket
         long rmvi = jtable_follow_chain(self, k, i);
         struct bucket *rmvb = &self->buckets[rmvi];
+        // this should be inlined and optimised to the obvious code that doesn't
+        // check this twice
         if (rmvb->key != k) {
                 return;
         }

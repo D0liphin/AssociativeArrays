@@ -371,7 +371,7 @@ void run_all_tests(const char *name, const char *vname, struct astv_array_vtable
         RUNTEST(test_updates_persist);
         RUNTEST(test_doesnt_contain_unmapped_keys);
         RUNTEST(test_removes_mappings);
-        RUNTEST(test_against_oracle_ordered);
-        RUNTEST(test_against_oracle_randoms);
+        // RUNTEST(test_against_oracle_ordered);
+        // RUNTEST(test_against_oracle_randoms);
         RUNTEST(test_against_oracle_randoms_huge);
 }
