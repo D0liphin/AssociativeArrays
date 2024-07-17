@@ -16,13 +16,13 @@ collection, for example.
 You will need `gcc`, `g++`, `cargo` and a global installation of
 [Google's benchmarking library](https://github.com/google/benchmark#installation).
 
-Run `make build-tests && make run-tests` to build and run tests and 
-`make build-benchmarks && make run-benchmarks` to build run benchmarks.
-You can follow along with the example provided by 
+Run `make build-tests && make run-tests` to build and run tests (~8
+minutes) and `make build-benchmarks && make run-benchmarks` to build run
+benchmarks. You can follow along with the example provided by
 `include/cpp_std_unordered_map.h` to add your own types.
 
-You will need to construct a `astv_array_vtable` for your 
-implementation. This defines the operations listed on the wikipedia 
+You will need to construct a `astv_array_vtable` for your
+implementation. This defines the operations listed on the wikipedia
 article, that is `insert()`, `remove()` and `lookup()`.
 
 ```c
