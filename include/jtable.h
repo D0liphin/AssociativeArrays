@@ -6,6 +6,7 @@
 #define CTRL_EMPTY ((char)0)
 #define CTRL_SNUG ((char)1)
 #define CTRL_DISPLACED ((char)2)
+#define CTRL_DISPLACED_HEAD ((char)3)
 
 struct bucket {
         char ctrl;

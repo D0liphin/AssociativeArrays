@@ -3,6 +3,8 @@
 #include <assert.h>
 #include "jtable.h"
 
+#define TRACE 1
+
 #define LDF 0.8
 
 long pve_offset(long i, uint16_t offset, size_t mod)
@@ -50,6 +52,9 @@ void bucket_print(struct bucket b)
         case CTRL_DISPLACED:
                 printf("d[");
                 break;
+        case CTRL_DISPLACED_HEAD:
+                printf("h[");
+                break;
         case CTRL_SNUG:
                 printf("s[");
                 break;
@@ -81,7 +86,7 @@ size_t jtable_probe_until_empty(jtable *self, size_t i)
 void jtable_realloc(jtable *self)
 {
         jtable newtbl;
-        jtable_init_with_capacity(&newtbl, self->cap ? self->cap * 2 : 6);
+        jtable_init_with_capacity(&newtbl, self->cap ? self->cap * 2 : 8);
         for (size_t i = 0; i < self->cap; ++i) {
                 struct bucket b = self->buckets[i];
                 if (b.ctrl != CTRL_EMPTY) {
@@ -122,18 +127,22 @@ void jtable_insert(jtable *self, keyint_t k, valint_t v)
                 b->ctrl = CTRL_SNUG;
                 b->key = k;
                 b->val = v;
+                b->next = 0;
+                b->prev = 0;
                 self->len++;
                 return;
         }
-        if (b->ctrl == CTRL_DISPLACED && b->chain_start == 0) {
+        if (b->ctrl != CTRL_SNUG && b->chain_start == 0) {
                 // No chain exists for this hash, and this cell is already
                 // occupied
                 long j = jtable_probe_until_empty(self, i);
                 b->chain_start = index_delta(i, j, self->cap);
                 b = &self->buckets[j];
-                b->ctrl = CTRL_DISPLACED;
+                b->ctrl = CTRL_DISPLACED_HEAD;
                 b->key = k;
                 b->val = v;
+                b->next = 0;
+                b->prev = 0;
                 self->len++;
                 return;
         }
@@ -154,6 +163,7 @@ void jtable_insert(jtable *self, keyint_t k, valint_t v)
         b->prev = d;
         b->key = k;
         b->val = v;
+        b->next = 0;
         self->len++;
 }
 
@@ -221,7 +231,7 @@ void jtable_remove(jtable *self, keyint_t k)
         if (rmvb->key != k) {
                 return;
         }
-        
+
         if (rmvb->ctrl == CTRL_SNUG) {
                 if (!rmvb->next) {
                         rmvb->ctrl = CTRL_EMPTY;
@@ -255,10 +265,13 @@ void jtable_remove(jtable *self, keyint_t k)
                 }
         }
         if (rmvb->next) {
-                // TODO: Fix the same case as above
-                long j = (rmvi + (long)rmvb->next) % self->cap;
+                long j = pve_offset(rmvi, rmvb->next, self->cap);
                 struct bucket *nextb = &self->buckets[j];
-                nextb->prev += rmvb->prev;
+                if (rmvb->prev) {
+                        nextb->prev += rmvb->prev;
+                } else {
+                        nextb->prev = 0;
+                }
         }
         jtable_replace_with_chain_start(self, rmvi);
         if ((i + b->chain_start) % (long)self->cap != rmvi) {

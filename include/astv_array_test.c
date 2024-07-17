@@ -88,8 +88,8 @@ void test_against_oracle_randoms_huge(struct astv_array_vtable vtbl, void *tbl)
         vtbl.init(tbl);
         cpp_std_unordered_map_init(&oracle);
         int maxv = 1 << 19;
-        for (size_t it = 0; it < (1 << 23); ++it) {
-                if (it % 4093 == 0) {
+        for (size_t it = 0; it < (1 << 25); ++it) {
+                if (it % (1 << 15) == 0) {
                         for (int n = 0; n < 10; ++n) {
                                 printf("\b\b\b\b\b");
                         }
@@ -191,7 +191,6 @@ bool operations_inc(struct operation *os, size_t maxl, size_t *restrict l)
                         return true;
                 }
         }
-        printf("maxl = %lu\n", maxl);
         return false;
 }
 
@@ -298,12 +297,12 @@ void operations_exec(struct astv_array_vtable vtbl, void *tbl, struct operation 
 void test_against_oracle_randoms(struct astv_array_vtable vtbl, void *tbl)
 {
         srand(time(NULL));
-        for (size_t osl = 8; osl < 13; ++osl) {
+        for (size_t osl = 8; osl <= 32; osl += 8) {
                 struct operation *os = calloc(sizeof(struct operation), osl);
-                keyint_t max_keyint = 16;
+                keyint_t max_keyint = 32;
                 printf("testing length-%lu sequences of operations...\n", osl);
-                for (size_t it = 0; it < (1 << 23); ++it) {
-                        if (it % 4093 == 0) {
+                for (size_t it = 0; it < (1 << 26); ++it) {
+                        if (it % (1 << 15) == 0) {
                                 for (int n = 0; n < 10; ++n) {
                                         printf("\b\b\b\b\b");
                                 }
@@ -372,7 +371,7 @@ void run_all_tests(const char *name, const char *vname, struct astv_array_vtable
         RUNTEST(test_updates_persist);
         RUNTEST(test_doesnt_contain_unmapped_keys);
         RUNTEST(test_removes_mappings);
-        // RUNTEST(test_against_oracle_ordered);
+        RUNTEST(test_against_oracle_ordered);
         RUNTEST(test_against_oracle_randoms);
         RUNTEST(test_against_oracle_randoms_huge);
 }
