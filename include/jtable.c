@@ -3,8 +3,6 @@
 #include <assert.h>
 #include "jtable.h"
 
-#define TRACE 1
-
 #define LDF 0.8
 
 long pve_offset(long i, uint16_t offset, size_t mod)
