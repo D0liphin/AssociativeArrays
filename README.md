@@ -75,8 +75,7 @@ ASTV_ARRAY_BENCHMARK_ALL(MyTable, mytable_vtable());
 //                       ^^^^^^^  ^^^^^^^^^^^^^^^^
 //                   typename ─┘                 |
 //                                               |
-//                the vtable to use for testing ─┘
-//                              
+//                the vtable to use for testing ─┘     
 ```
 
 You can view graphs of the benchmarks with the provided `results.py` 
