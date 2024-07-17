@@ -59,3 +59,26 @@ astv_array_lookup_fn_t lookup;
 astv_array_deinit_fn_t deinit;
 };
 ```
+
+## Benchmarks
+
+Add your table implementation to `benchmark.cpp`. This will involve 
+
+1. `#include`-ing it in an `extern "C"` block
+```c
+#include "mytable.h"
+```
+
+2. Using one of the macros to set up benchmarks
+```c
+ASTV_ARRAY_BENCHMARK_ALL(MyTable, mytable_vtable());
+//                       ^^^^^^^  ^^^^^^^^^^^^^^^^
+//                   typename ─┘                 |
+//                                               |
+//                the vtable to use for testing ─┘
+//                              
+```
+
+You can view graphs of the benchmarks with the provided `results.py` 
+script. By default, this is set up to use the output of `run-benchmarks`
+and to normalize your results vs C++'s `std::unordered_map`.

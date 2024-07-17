@@ -48,16 +48,7 @@ def group_by_bm_name(bms: list[Benchmark]) -> list[list[Benchmark]]:
     return list(d.values())
 
 
-def main():
-    filename = input_or_default("benchmark output json", "./benchmark_results/out.json")
-    baseline = input_or_default("baseline impl", "cpp_std_unordered_map")
-    print(colored(BLUE)(f"filename = {filename}"))
-    print(colored(BLUE)(f"baseline = {baseline}"))
-
-    with open(filename) as f:
-        j = json.loads(f.read())
-        bms = list(map(Benchmark.from_json, j["benchmarks"]))
-
+def normalize_vs(bms: list[Benchmark], baseline: str):
     baseline_bms = [bm for bm in bms if bm.type_name == baseline]
 
     if len(baseline_bms) == 0:
@@ -70,7 +61,26 @@ def main():
     for bm in bms:
         bm.time /= baseline_cpu_time[bm.bm_name]
 
-    y_axis_name = f"Time vs {baseline}"
+
+def main():
+    filename = input_or_default("benchmark output json", "./benchmark_results/out.json")
+    normalize = input_or_default("normalize [y/n]", "y") == "y"
+    if normalize:
+        baseline = input_or_default("baseline impl", "cpp_std_unordered_map")
+    print(colored(BLUE)(f"filename = {filename}"))
+    if normalize:
+        print(colored(BLUE)(f"normalized = vs {baseline}"))
+    else:
+        print(colored(BLUE)(f"normalized = False"))
+
+    with open(filename) as f:
+        j = json.loads(f.read())
+        bms = list(map(Benchmark.from_json, j["benchmarks"]))
+
+    if normalize:
+        normalize_vs(bms, baseline)
+
+    y_axis_name = f"Time vs {baseline}" if normalize else "CPU Time"
 
     df = pd.DataFrame(
         {
